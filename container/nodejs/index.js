@@ -16,6 +16,7 @@ const subtxt = `${process.env.HOME}/agsbx/jh.txt`;
 const NAME = process.env.NAME || os.hostname();
 const PORT = process.env.PORT || 3000;
 const uuid = process.env.uuid || '79411d85-b0dc-4cd2-b46c-01789a18c650';
+let ipCache = { ip: null, ts: 0 };
 const DOMAIN = process.env.DOMAIN || 'YOUR.DOMAIN';
 const vlessInfo = `vless://${uuid}@${DOMAIN}:443?encryption=none&security=tls&sni=${DOMAIN}&fp=chrome&type=ws&host=${DOMAIN}&path=%2F#Vl-ws-tls-${NAME}`;
 console.log(`vless-ws-tls节点分享: ${vlessInfo}`);
@@ -85,22 +86,22 @@ Commercial support is available at
     }
 
     if (req.url === `/${uuid}/ip`) {
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-        const ipFile = `${process.env.HOME}/agsbx/server_ip.log`;
-        let result = '===== 服务器 IP 信息 =====\n\n';
-        if (fs.existsSync(ipFile)) {
-            result += `本机IP（缓存）：${fs.readFileSync(ipFile, 'utf8').trim()}\n\n`;
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        const now = Date.now();
+        if (ipCache.ip && now - ipCache.ts < 86400000) {
+            res.end(ipCache.ip);
+        } else {
+            try {
+                const ip = execSync('curl -s4m5 -k https://icanhazip.com 2>/dev/null', { timeout: 6000 }).toString().trim();
+                ipCache = { ip, ts: now };
+                res.end(ip);
+            } catch (e) {
+                res.end(ipCache.ip || 'error');
+            }
         }
-        const fetchIP = (cmd) => {
-            try { return execSync(cmd, { timeout: 6000 }).toString().trim(); } catch (e) { return '获取失败'; }
-        };
-        const ipv4 = fetchIP('curl -s4m5 -k https://icanhazip.com 2>/dev/null || wget -4 -qO- --tries=1 --timeout=5 https://icanhazip.com 2>/dev/null');
-        const ipv6 = fetchIP('curl -s6m5 -k https://icanhazip.com 2>/dev/null || wget -6 -qO- --tries=1 --timeout=5 https://icanhazip.com 2>/dev/null');
-        result += `IPv4（实时）：${ipv4 || '无'}\n`;
-        result += `IPv6（实时）：${ipv6 || '无'}\n`;
-        res.end(result);
         return;
     }
+
 
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('404 Not Found');
