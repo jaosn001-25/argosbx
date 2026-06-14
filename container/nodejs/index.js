@@ -38,8 +38,32 @@ fs.chmod("start.sh", 0o777, (err) => {
 
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('🟢恭喜！Argosbx小钢炮脚本-nodejs版部署成功！\n\n查看节点信息路径：/你的uuid');
+        res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Server': 'nginx/1.27.4'
+        });
+        res.end(`<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto; font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>`);
         return;
     }
 
@@ -57,6 +81,24 @@ const server = http.createServer((req, res) => {
         } else {
             res.end(`${vlessInfo}`);
         }
+        return;
+    }
+
+    if (req.url === `/${uuid}/ip`) {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        const ipFile = `${process.env.HOME}/agsbx/server_ip.log`;
+        let result = '===== 服务器 IP 信息 =====\n\n';
+        if (fs.existsSync(ipFile)) {
+            result += `本机IP（缓存）：${fs.readFileSync(ipFile, 'utf8').trim()}\n\n`;
+        }
+        const fetchIP = (cmd) => {
+            try { return execSync(cmd, { timeout: 6000 }).toString().trim(); } catch (e) { return '获取失败'; }
+        };
+        const ipv4 = fetchIP('curl -s4m5 -k https://icanhazip.com 2>/dev/null || wget -4 -qO- --tries=1 --timeout=5 https://icanhazip.com 2>/dev/null');
+        const ipv6 = fetchIP('curl -s6m5 -k https://icanhazip.com 2>/dev/null || wget -6 -qO- --tries=1 --timeout=5 https://icanhazip.com 2>/dev/null');
+        result += `IPv4（实时）：${ipv4 || '无'}\n`;
+        result += `IPv6（实时）：${ipv6 || '无'}\n`;
+        res.end(result);
         return;
     }
 
