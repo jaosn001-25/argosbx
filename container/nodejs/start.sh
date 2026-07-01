@@ -2,6 +2,7 @@
 export LANG=en_US.UTF-8
 export uuid=${uuid}
 export vwpt=${vwpt}
+export cfip=${cfip}
 export argo=${argo}
 export agn=${agn}
 export agk=${agk}
@@ -265,8 +266,6 @@ sxname=$(cat "$HOME/agsbx/name" 2>/dev/null)
 echo "*********************************************************"
 echo "Argosbx脚本输出节点配置如下："
 echo
-cfip() { echo $((RANDOM % 13 + 1)); }
-
 # vless-ws 直连节点
 if grep vless-ws "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
 echo "💣【 Vless-ws 】节点信息如下："
@@ -282,32 +281,32 @@ argodomain=$(cat "$HOME/agsbx/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsbx/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 if [ -n "$argodomain" ]; then
 echo "💣【 Vless-ws-tls-argo 】节点信息如下："
-echo "注：默认地址 yg数字.ygkkk.dpdns.org 可自行更换优选IP域名"
-vwatls_link1="vless://$uuid@yg1.ygkkk.dpdns.org:443?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-443"
+echo "注：已应用您自定义的域名 ${cfip} 作为优选地址"
+vwatls_link1="vless://$uuid@${cfip}:443?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-443"
 echo "$vwatls_link1" >> "$HOME/agsbx/jh.txt"
-vwatls_link2="vless://$uuid@yg2.ygkkk.dpdns.org:8443?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-8443"
+vwatls_link2="vless://$uuid@${cfip}:8443?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-8443"
 echo "$vwatls_link2" >> "$HOME/agsbx/jh.txt"
-vwatls_link3="vless://$uuid@yg3.ygkkk.dpdns.org:2053?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2053"
+vwatls_link3="vless://$uuid@${cfip}:2053?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2053"
 echo "$vwatls_link3" >> "$HOME/agsbx/jh.txt"
-vwatls_link4="vless://$uuid@yg4.ygkkk.dpdns.org:2083?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2083"
+vwatls_link4="vless://$uuid@${cfip}:2083?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2083"
 echo "$vwatls_link4" >> "$HOME/agsbx/jh.txt"
-vwatls_link5="vless://$uuid@yg5.ygkkk.dpdns.org:2087?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2087"
+vwatls_link5="vless://$uuid@${cfip}:2087?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2087"
 echo "$vwatls_link5" >> "$HOME/agsbx/jh.txt"
 vwatls_link6="vless://$uuid@[2606:4700::0]:2096?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=tls&sni=$argodomain&fp=chrome#${sxname}vless-ws-tls-argo-$hostname-2096"
 echo "$vwatls_link6" >> "$HOME/agsbx/jh.txt"
 echo
 echo "💣【 Vless-ws-argo (非TLS) 】节点信息如下："
-vwa_link7="vless://$uuid@yg6.ygkkk.dpdns.org:80?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-80"
+vwa_link7="vless://$uuid@${cfip}:80?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-80"
 echo "$vwa_link7" >> "$HOME/agsbx/jh.txt"
-vwa_link8="vless://$uuid@yg7.ygkkk.dpdns.org:8080?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-8080"
+vwa_link8="vless://$uuid@${cfip}:8080?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-8080"
 echo "$vwa_link8" >> "$HOME/agsbx/jh.txt"
-vwa_link9="vless://$uuid@yg8.ygkkk.dpdns.org:8880?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-8880"
+vwa_link9="vless://$uuid@${cfip}:8880?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-8880"
 echo "$vwa_link9" >> "$HOME/agsbx/jh.txt"
-vwa_link10="vless://$uuid@yg9.ygkkk.dpdns.org:2052?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2052"
+vwa_link10="vless://$uuid@${cfip}:2052?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2052"
 echo "$vwa_link10" >> "$HOME/agsbx/jh.txt"
-vwa_link11="vless://$uuid@yg10.ygkkk.dpdns.org:2082?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2082"
+vwa_link11="vless://$uuid@${cfip}:2082?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2082"
 echo "$vwa_link11" >> "$HOME/agsbx/jh.txt"
-vwa_link12="vless://$uuid@yg11.ygkkk.dpdns.org:2086?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2086"
+vwa_link12="vless://$uuid@${cfip}:2086?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2086"
 echo "$vwa_link12" >> "$HOME/agsbx/jh.txt"
 vwa_link13="vless://$uuid@[2400:cb00:2049::0]:2095?encryption=none&flow=xtls-rprx-vision&type=ws&host=$argodomain&path=/$uuid-vw&security=none#${sxname}vless-ws-argo-$hostname-2095"
 echo "$vwa_link13" >> "$HOME/agsbx/jh.txt"
