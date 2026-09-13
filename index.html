@@ -197,7 +197,7 @@
       outline: none;
       transition: background-color 0.3s, border-color 0.3s, color 0.3s;
     }
-    input[disabled] {
+    input[disabled], select[disabled] {
       opacity: .5;
     }
     .switch {
@@ -387,7 +387,7 @@
           </svg>
         </label>
       </div>
-      <h1>ArgoSBX小钢炮脚本💣一键SSH命令生成器 V26.5.26</h1>
+      <h1>ArgoSBX小钢炮脚本💣一键SSH命令生成器 V26.7.16</h1>
       <p>
         甬哥Github项目：
         <a href="https://github.com/yonggekkk" target="_blank">github.com/yonggekkk</a><br>
@@ -408,16 +408,18 @@
           <div class="protocol-grid">
             <label><input type="checkbox" data-proto="vlpt"> Vless-tcp-reality-vision <span class="pill">vlpt</span></label><input type="text" placeholder="留空则随机端口" data-port="vlpt">
             <label><input type="checkbox" data-proto="xhpt"> Vless-xhttp-reality-enc <span class="pill">xhpt</span></label><input type="text" placeholder="留空则随机端口" data-port="xhpt">
-            <label><input type="checkbox" data-proto="vxpt"> Vless-xhttp-enc <span class="pill">vxpt</span></label><input type="text" placeholder="留空则随机端口（支持CDN优选）" data-port="vxpt">
-            <label><input type="checkbox" data-proto="vwpt"> Vless-ws-enc <span class="pill">vwpt</span></label><input type="text" placeholder="留空则随机端口（支持CDN优选，固定隧道必填URL端口）" data-port="vwpt">
+            <label><input type="checkbox" data-proto="vxpt"> Vless-xhttp-enc <span class="pill">vxpt</span></label><input type="text" placeholder="留空则随机端口" data-port="vxpt">
+            <label><input type="checkbox" data-proto="vwpt"> Vless-ws-enc <span class="pill">vwpt</span></label><input type="text" placeholder="留空则随机端口（Argo固定隧道的URL端口相同）" data-port="vwpt">
+            <label><input type="checkbox" data-proto="xupt"> Vless-xhttp-tls-UDP <span class="pill">xupt</span></label><input type="text" placeholder="留空则随机端口" data-port="xupt">
+            <label><input type="checkbox" data-proto="xcpt"> Vless-xhttp-tls-TCP/UDP <span class="pill">xcpt</span></label><input type="text" placeholder="留空则随机端口，(443系端口+域名证书,UDP-CDN可用)" data-port="xcpt">
           </div>
         </div>
         <div class="protocol-group separator">
           <h3>Singbox可选协议：</h3>
           <div class="protocol-grid">
-            <label><input type="checkbox" data-proto="hypt"> Hysteria2 <span class="pill">hypt</span></label><input type="text" placeholder="留空则随机端口" data-port="hypt">
             <label><input type="checkbox" data-proto="tupt"> Tuic <span class="pill">tupt</span></label><input type="text" placeholder="留空则随机端口" data-port="tupt">
             <label><input type="checkbox" data-proto="anpt"> AnyTLS <span class="pill">anpt</span></label><input type="text" placeholder="留空则随机端口" data-port="anpt">
+            <label><input type="checkbox" data-proto="nvpt" disabled> Naiveproxy <span class="pill">nvpt</span></label><input type="text" placeholder="启用域名IP证书TLS后可选，留空则随机端口" data-port="nvpt" disabled>
             <label><input type="checkbox" data-proto="arpt"> Any-reality <span class="pill">arpt</span></label><input type="text" placeholder="留空则随机端口" data-port="arpt">
             <label><input type="checkbox" data-proto="sspt"> Shadowsocks-2022 <span class="pill">sspt</span></label><input type="text" placeholder="留空则随机端口" data-port="sspt">
           </div>
@@ -425,8 +427,9 @@
         <div class="protocol-group separator">
           <h3>自动(已选Xray则用Xray，否则Singbox)：</h3>
           <div class="protocol-grid">
+            <label><input type="checkbox" data-proto="hypt"> Hysteria2 <span class="pill">hypt</span></label><input type="text" placeholder="留空则随机端口" data-port="hypt">
+            <label><input type="checkbox" data-proto="vmpt"> Vmess-ws <span class="pill">vmpt</span></label><input type="text" placeholder="留空则随机端口（Argo固定隧道的URL端口相同）" data-port="vmpt">
             <label><input type="checkbox" data-proto="sopt"> Socks5 <span class="pill">sopt</span></label><input type="text" placeholder="留空则随机端口" data-port="sopt">
-            <label><input type="checkbox" data-proto="vmpt"> Vmess-ws <span class="pill">vmpt</span></label><input type="text" placeholder="留空则随机端口（支持CDN优选，固定隧道必填URL端口）" data-port="vmpt">
           </div>
         </div>
       </section>
@@ -441,6 +444,13 @@
           </div>
         </div>
         <div class="row"><label>Reality 域名 <span class="pill">reym</span></label><input id="reym" type="text" placeholder="选择Reality相关协议后可用，留空默认apple.com" disabled/></div>
+        <div class="row"><label>CDN优选IP域名 <span class="pill">cfip</span></label><input id="cfip" type="text" placeholder="支持2个优选IP域名(空格间隔)，留空默认优选域名" disabled></div>
+        <div class="row"><label>启用域名IP证书TLS <span class="pill">alns</span></label>
+          <select id="alns">
+            <option value="">默认 关闭 (HY2/TUIC/Anytls/Xhttp-tls为自签证书TLS)</option>
+            <option value="y">开启 (HY2/TUIC/Naive/Anytls/Xhttp-tls为域名IP证书TLS)</option>
+          </select>
+        </div>
         <div class="row"><label>Hysteria2端口跳跃 <span class="pill">hyjpt</span></label><input id="hyjpt" type="text" placeholder="支持多个范围端口与单端口混用(空格间隔)，例：123:456 789" disabled/></div>
         <div class="row"><label>CF解析IP的域名<span class="pill">cdnym</span></label><input id="cdnym" type="text" placeholder="Vmess-ws、Vless-xhttp/ws-enc启用80、回源CDN时可用" disabled/></div>
         <div class="row"><label>套WARP-IP出站 <span class="pill">warp</span></label>
@@ -512,7 +522,6 @@
         </div>
         <div class="row"><label>固定隧道CF域名 <span class="pill">agn</span></label><input id="agn" type="text" placeholder="Zero Trust已设置有子域名称的CF域名，留空则临时隧道" disabled></div>
         <div class="row"><label>固定隧道Token <span class="pill">agk</span></label><input id="agk" type="text" placeholder="Zero Trust已提取ey开头的秘钥，留空则临时隧道" disabled></div>
-        <div class="row"><label>Argo订阅优选IP域名 <span class="pill">cfip</span></label><input id="cfip" type="text" placeholder="可选填两个优选IP域名(空格间隔)，留空则默认优选域名" disabled></div>
       </section>
 
       <section class="card shortcut-commands-card">
@@ -542,15 +551,16 @@
           <button id="copy">复制</button>
         </div>
         <p style="margin-top: 10px;">相关细节说明，请参考ArgoSBX小钢炮脚本项目💣：<a href="https://github.com/yonggekkk/argosbx" target="_blank">github.com/yonggekkk/argosbx</a></p>
+Acme-yg域名IP证书脚本：bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/acme-yg/main/acme.sh)</a></p>
 1、ArgoSBX一键SSH命令生成器发布，只要点几下，各大代理协议任你选：<a href="https://youtu.be/4u6W4c-t3oU" target="_blank">点击视频教程</a></p>
 2、ArgoSBX内置15种WARP出站组合，轻松替代独立的WARP脚本：<a href="https://youtu.be/iywjT8fIka4" target="_blank">点击视频教程</a></p>
 3、代理节点的IP、端口被封依旧可用！ArgoSBX脚本套CDN优选4大方案：<a href="https://youtu.be/RnUT1CNbCr8" target="_blank">点击视频教程</a></p>
 4、VPS+容器搭建最强CDN节点；独家解读Argo临时/固定隧道区别：<a href="https://youtu.be/K35NhrNiLK8" target="_blank">点击视频教程</a></p>
 5、ArgoSBX更新：VLESS抗量子加密；80端口开启TLS，无需域名CDN：<a href="https://youtu.be/X8BFVyeiY9g" target="_blank">点击视频教程</a></p>
-6、小白一分钟自建ArgoSBX翻墙VPN代理：支付IP订阅链接；HY2端口跳跃：<a href="https://youtu.be/xHzZFP_ywLs" target="_blank">点击视频教程</a></p>      
+6、小白一分钟自建ArgoSBX翻墙VPN代理：支持IP订阅链接；HY2端口跳跃：<a href="https://youtu.be/xHzZFP_ywLs" target="_blank">点击视频教程</a></p>      
         安卓手机客户端推荐：<a href="https://github.com/starifly/NekoBoxForAndroid/releases" target="_blank">Nekobox-starifly版 (全协议支持)</a>、<a href="https://github.com/2dust/v2rayNG/releases" target="_blank">V2rayNG官方版</a><br>
         电脑win客户端推荐：<a href="https://github.com/2dust/v2rayN/releases" target="_blank">V2rayN官方版 (全协议支持)</a><br>
-        苹果IOS客户端推荐：Happ、OneXray、Streisand
+        苹果IOS客户端推荐：小火箭Shadowrocket、Sing-box MT、Clash mi、Onexray
       </p>
       </section>
     </div>
@@ -560,8 +570,8 @@
 (function(){
   const CURL = 'bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)';
   const WGET = 'bash <(wget -qO- https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)';
-  const protoKeys = ['sopt','vmpt','vlpt','xhpt','vxpt','vwpt','arpt','anpt','hypt','tupt','sspt'];
-  const optIds = ['warp','ippz','uuid','reym','hyjpt','cdnym','name', 'oap', 'sub', 'subid', 'subpt'];
+  const protoKeys = ['sopt','vmpt','vlpt','xhpt','vxpt','vwpt','xupt','xcpt','hypt','tupt','nvpt','anpt','arpt','sspt'];
+  const optIds = ['warp','ippz','uuid','reym','cfip','alns','hyjpt','cdnym','name', 'oap', 'sub', 'subid', 'subpt'];
 
   const argoSelect = document.getElementById('argoSelect');
   const agn = document.getElementById('agn');
@@ -576,10 +586,14 @@
   const vlessXhttpCheckbox = document.querySelector('[data-proto="vxpt"]');
   const vlessTcpRealityCheckbox = document.querySelector('[data-proto="vlpt"]');
   const vlessXhttpRealityCheckbox = document.querySelector('[data-proto="xhpt"]');
+  const vlessXhttpTlsCheckbox = document.querySelector('[data-proto="xcpt"]');
   const anyRealityCheckbox = document.querySelector('[data-proto="arpt"]');
   const hy2Checkbox = document.querySelector('[data-proto="hypt"]');
+  const nvptCheckbox = document.querySelector('[data-proto="nvpt"]');
+  const nvptPortInput = document.querySelector('[data-port="nvpt"]');
 
   const reymInput = document.getElementById('reym');
+  const alnsSelect = document.getElementById('alns');
   const hyjptInput = document.getElementById('hyjpt');
   const cdnymInput = document.getElementById('cdnym');
   
@@ -617,9 +631,8 @@
     if (!isEnabled) {
       agn.value = '';
       agk.value = '';
-      cfip.value = '';
     }
-    [agn, agk, cfip].forEach(i => i.disabled = !isEnabled);
+    [agn, agk].forEach(i => i.disabled = !isEnabled);
   }
 
   function updateSubState() {
@@ -646,6 +659,8 @@
     oapSelect.value = '';
     document.getElementById('uuid').value = '';
     document.getElementById('reym').value = '';
+    document.getElementById('cfip').value = '';
+    document.getElementById('alns').value = '';
     document.getElementById('hyjpt').value = '';
     document.getElementById('name').value = '';
     sub.value = '';
@@ -664,19 +679,34 @@
       reymInput.disabled = !isRealityEnabled;
       if (!isRealityEnabled) reymInput.value = '';
 
+      const isAlnsEnabled = alnsSelect.value === 'y';
+      nvptCheckbox.disabled = !isAlnsEnabled;
+      nvptPortInput.disabled = !isAlnsEnabled;
+      if (!isAlnsEnabled) {
+          nvptCheckbox.checked = false;
+          nvptPortInput.value = '';
+      }
+
       const isHy2Enabled = hy2Checkbox.checked;
       hyjptInput.disabled = !isHy2Enabled;
       if (!isHy2Enabled) hyjptInput.value = '';
+
+      const isCfipEnabled = vlessXhttpTlsCheckbox.checked || vlessWsVCheckbox.checked || vlessXhttpCheckbox.checked || vmessWsCheckbox.checked;
+      cfip.disabled = !isCfipEnabled;
+      if (!isCfipEnabled) {
+          cfip.value = '';
+      }
 
       render();
   }
 
   sub.addEventListener('change', updateSubState);
+  alnsSelect.addEventListener('change', updateDynamicInputs);
 
   argoSelect.addEventListener('change', () => {
     const argoValue = argoSelect.value;
     const isEnabled = argoValue !== '';
-    [agn, agk, cfip].forEach(i => i.disabled = !isEnabled);
+    [agn, agk].forEach(i => i.disabled = !isEnabled);
     if (argoValue === 'vwpt') {
         vlessWsVCheckbox.checked = true;
     } else if (argoValue === 'vmpt') {
@@ -685,13 +715,12 @@
     if (!isEnabled) {
         agn.value = '';
         agk.value = '';
-        cfip.value = '';
     }
     updateDynamicInputs(); 
     render();
   });
 
-  [vmessWsCheckbox, vlessWsVCheckbox, vlessXhttpCheckbox, vlessTcpRealityCheckbox, vlessXhttpRealityCheckbox, anyRealityCheckbox, hy2Checkbox].forEach(ck => {
+  [vmessWsCheckbox, vlessWsVCheckbox, vlessXhttpCheckbox, vlessTcpRealityCheckbox, vlessXhttpRealityCheckbox, vlessXhttpTlsCheckbox, anyRealityCheckbox, hy2Checkbox].forEach(ck => {
     ck.addEventListener('change', () => {
       if (!vlessWsVCheckbox.checked && argoSelect.value === 'vwpt') { 
          argoSelect.value = '';
@@ -764,10 +793,8 @@
       m['argo'] = argoValue; 
       const _agn = (agn.value || '').trim();
       const _agk = (agk.value || '').trim();
-      const _cfip = (cfip.value || '').trim();
       if (!agn.disabled && _agn) m['agn'] = _agn;
       if (!agk.disabled && _agk) m['agk'] = _agk;
-      if (!cfip.disabled && _cfip) m['cfip'] = _cfip;
     }
     return m;
   }
@@ -776,11 +803,10 @@
     const keys = Object.keys(m);
     const ordered = [];
     protoKeys.forEach(k => { if (keys.includes(k)) ordered.push(k); });
-    ['warp', 'uuid', 'reym', 'hyjpt', 'cdnym', 'name', 'ippz', 'sub', 'subid', 'subpt'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
+    ['warp', 'uuid', 'reym', 'cfip', 'alns', 'hyjpt', 'cdnym', 'name', 'ippz', 'sub', 'subid', 'subpt'].forEach(k => { if (keys.includes(k)) ordered.push(k); });
     if (keys.includes('argo')) ordered.push('argo');
     if (keys.includes('agn')) ordered.push('agn');
     if (keys.includes('agk')) ordered.push('agk');
-    if (keys.includes('cfip')) ordered.push('cfip');
     if (keys.includes('oap')) ordered.push('oap');
     keys.forEach(k => { if (!ordered.includes(k)) ordered.push(k); });
 
@@ -842,12 +868,18 @@
     }
     [subid, subpt].forEach(i => i.disabled = (sub.value !== 'y'));
 
+    if ('alns' in params) {
+      alnsSelect.value = params['alns'];
+    } else {
+      alnsSelect.value = '';
+    }
+
     if ('argo' in params) {
       argoSelect.value = params['argo'];
     } else {
       argoSelect.value = '';
     }
-    [agn, agk, cfip].forEach(i => i.disabled = (argoSelect.value === ''));
+    [agn, agk].forEach(i => i.disabled = (argoSelect.value === ''));
 
     const isCdnEnabled = params['vmpt'] !== undefined || params['vxpt'] !== undefined || params['vwpt'] !== undefined;
     cdnymInput.disabled = !isCdnEnabled;
@@ -855,7 +887,14 @@
     reymInput.disabled = !isRealityEnabled;
     hyjptInput.disabled = (params['hypt'] === undefined);
 
-    const allIds = [...optIds, 'agn', 'agk', 'cfip'];
+    const isAlnsEnabled = alnsSelect.value === 'y';
+    nvptCheckbox.disabled = !isAlnsEnabled;
+    nvptPortInput.disabled = !isAlnsEnabled;
+
+    const isCfipEnabled = params['xcpt'] !== undefined || params['vwpt'] !== undefined || params['vxpt'] !== undefined || params['vmpt'] !== undefined;
+    cfip.disabled = !isCfipEnabled;
+
+    const allIds = [...optIds, 'agn', 'agk'];
     allIds.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -914,7 +953,6 @@
     try { await navigator.clipboard.writeText(t.value); showToast('已复制到剪贴板'); } catch (e) { document.execCommand('copy'); showToast('已复制'); }
   });
 
-  // 修改此处的重置按钮逻辑：彻底清空表单组件，同时彻底清空脚本输出栏
   document.getElementById('reset').addEventListener('click', () => { 
     resetForm(false); 
     output.value = ''; 
