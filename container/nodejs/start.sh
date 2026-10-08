@@ -2,6 +2,10 @@
 export LANG=en_US.UTF-8
 export uuid=${uuid}
 export vmpt=${vmpt}
+export vlpt=${vlpt}
+export reym=${reym}
+export rlyhost=${rlyhost}
+export rlyport=${rlyport}
 export argo=${argo}
 export agn=${agn}
 export agk=${agk}
@@ -29,6 +33,13 @@ x86_64) cpu=amd64;;
 *) echo "目前脚本不支持$(uname -m)架构" && exit
 esac
 mkdir -p "$HOME/agsbx"
+
+checkport(){
+case "$1" in
+''|*[!0-9]*) return 1;;
+esac
+[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
 
 v4v6(){
 v4=$( (command -v curl >/dev/null 2>&1 && curl -s4m5 -k "$v46url" 2>/dev/null) || (command -v wget >/dev/null 2>&1 && timeout 3 wget -4 --tries=2 -qO- "$v46url" 2>/dev/null) )
@@ -70,6 +81,29 @@ cat > "$HOME/agsbx/xr.json" <<EOF
   "inbounds": [
 EOF
 insuuid
+if [ -n "$vlpt" ]; then
+mkdir -p "$HOME/agsbx/xrk"
+if [ -z "$reym" ]; then
+reym=www.apple.com
+fi
+if [ -z "$name" ]; then
+name=agsbx-$("$HOME/agsbx/xray" uuid | cut -c1-8)
+fi
+if [ ! -e "$HOME/agsbx/xrk/private_key" ]; then
+key_pair=$("$HOME/agsbx/xray" x25519)
+private_key=$(echo "$key_pair" | grep "PrivateKey" | awk '{print $2}')
+public_key=$(echo "$key_pair" | grep "Password" | awk '{print $2}')
+short_id=$(date +%s%N | sha256sum | cut -c 1-8)
+echo "$private_key" > "$HOME/agsbx/xrk/private_key"
+echo "$public_key" > "$HOME/agsbx/xrk/public_key"
+echo "$short_id" > "$HOME/agsbx/xrk/short_id"
+fi
+private_key_x=$(cat "$HOME/agsbx/xrk/private_key")
+public_key_x=$(cat "$HOME/agsbx/xrk/public_key")
+short_id_x=$(cat "$HOME/agsbx/xrk/short_id")
+fi
+echo "$reym" > "$HOME/agsbx/reym"
+echo "$name-" > "$HOME/agsbx/name"
 }
 
 addvmessws(){
@@ -102,7 +136,54 @@ cat >> "$HOME/agsbx/xr.json" <<EOF
             "destOverride": ["http", "tls", "quic"],
             "metadataOnly": false
             }
-         }
+         },
+EOF
+fi
+}
+
+addreality(){
+if [ -n "$vlpt" ]; then
+if ! checkport "$vlpt"; then
+echo "Vless-tcp-reality-v端口不是有效端口: $vlpt" && exit
+fi
+echo "$vlpt" > "$HOME/agsbx/vlpt"
+vlpt=$(cat "$HOME/agsbx/vlpt")
+echo "Vless-tcp-reality-v端口：$vlpt"
+echo "Reality伪装域名：$reym"
+cat >> "$HOME/agsbx/xr.json" <<EOF
+        {
+            "tag": "reality-vision",
+            "listen": "::",
+            "port": ${vlpt},
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "${uuid}",
+                        "flow": "xtls-rprx-vision"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "reality",
+                "realitySettings": {
+                    "fingerprint": "chrome",
+                    "target": "${reym}:443",
+                    "serverNames": [
+                      "${reym}"
+                    ],
+                    "privateKey": "$private_key_x",
+                    "shortIds": ["$short_id_x"]
+                }
+            },
+          "sniffing": {
+          "enabled": true,
+          "destOverride": ["http", "tls", "quic"],
+          "metadataOnly": false
+      }
+    },
 EOF
 fi
 }
@@ -138,11 +219,14 @@ cat >> "$HOME/agsbx/xr.json" <<EOF
   }
 }
 EOF
+if ! "$HOME/agsbx/xray" run -test -c "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
+echo "Xray配置校验失败，请检查端口与伪装域名设置" && exit
+fi
 nohup "$HOME/agsbx/xray" run -c "$HOME/agsbx/xr.json" >/dev/null 2>&1 &
 }
 
 installargo(){
-if [ -n "$argo" ]; then
+if [ -n "$argo" ] && [ -n "$vmpt" ]; then
 echo
 echo "=========启用Cloudflared-argo内核========="
 if [ ! -e "$HOME/agsbx/cloudflared" ]; then
@@ -185,15 +269,13 @@ fi
 }
 
 ins(){
-if [ -n "$name" ]; then
-sxname=$name-
-echo "$sxname" > "$HOME/agsbx/name"
-echo
-echo "所有节点名称前缀：$name"
+if [ -n "$vmpt" ] && ! checkport "$vmpt"; then
+echo "Vmess-ws端口不是有效端口: $vmpt" && exit
 fi
 v4v6
 installxray
 addvmessws
+addreality
 finalizexray
 installargo
 }
@@ -272,6 +354,26 @@ vmpt=$(cat "$HOME/agsbx/vmpt")
 vm_link="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"${sxname}vm-ws-$hostname\", \"add\": \"$server_ip\", \"port\": \"$vmpt\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"www.bing.com\", \"path\": \"/$uuid-vm\", \"tls\": \"\"}" | base64 -w0)"
 echo "$vm_link" >> "$HOME/agsbx/jh.txt"
 echo "$vm_link"
+echo
+fi
+
+# reality 节点
+if grep reality-vision "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
+vlpt=$(cat "$HOME/agsbx/vlpt")
+public_key_x=$(cat "$HOME/agsbx/xrk/public_key" 2>/dev/null)
+short_id_x=$(cat "$HOME/agsbx/xrk/short_id" 2>/dev/null)
+reym=$(cat "$HOME/agsbx/reym" 2>/dev/null)
+echo "💣【 Vless-tcp-reality-vision 】节点信息如下："
+if [ -n "$rlyhost" ] && [ -n "$rlyport" ]; then
+echo "注：地址与端口取自Railway TCP Proxy，须与容器内监听端口 $vlpt 对应"
+vl_link="vless://$uuid@$rlyhost:$rlyport?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reym&fp=chrome&pbk=$public_key_x&sid=$short_id_x&type=tcp&headerType=none#${sxname}vl-reality-vision-$hostname"
+else
+echo "提示：未设置 rlyhost/rlyport，以下为占位符，请替换为Railway TCP Proxy分配的地址与端口"
+echo "容器内监听端口：$vlpt"
+vl_link="vless://$uuid@RAILWAY_TCP_PROXY_HOST:RAILWAY_TCP_PROXY_PORT?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reym&fp=chrome&pbk=$public_key_x&sid=$short_id_x&type=tcp&headerType=none#${sxname}vl-reality-vision-$hostname"
+fi
+echo "$vl_link" >> "$HOME/agsbx/jh.txt"
+echo "$vl_link"
 echo
 fi
 
