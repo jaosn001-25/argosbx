@@ -6,6 +6,9 @@ export vlpt=${vlpt}
 export reym=${reym}
 export rlyhost=${rlyhost}
 export rlyport=${rlyport}
+export pvk=${pvk}
+export pbk=${pbk}
+export sid=${sid}
 export argo=${argo}
 export agn=${agn}
 export agk=${agk}
@@ -34,11 +37,11 @@ x86_64) cpu=amd64;;
 esac
 mkdir -p "$HOME/agsbx"
 
-checkport(){
+iskey(){
 case "$1" in
-''|*[!0-9]*) return 1;;
+''|*[!A-Za-z0-9+/=_-]*) return 1;;
 esac
-[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+[ "${#1}" -ge 40 ] && [ "${#1}" -le 50 ]
 }
 
 v4v6(){
@@ -87,20 +90,47 @@ if [ -z "$reym" ]; then
 reym=www.apple.com
 fi
 if [ -z "$name" ]; then
-name=agsbx-$("$HOME/agsbx/xray" uuid | cut -c1-8)
+name=agsbx
 fi
-if [ ! -e "$HOME/agsbx/xrk/private_key" ]; then
+kbfrom='环境变量(重启不变)'
+if [ -z "$pvk" ] || [ -z "$pbk" ] || [ -z "$sid" ]; then
+kbfrom='本地生成(重启后会变)'
+if [ -e "$HOME/agsbx/xrk/private_key" ]; then
+pvk=$(cat "$HOME/agsbx/xrk/private_key")
+pbk=$(cat "$HOME/agsbx/xrk/public_key" 2>/dev/null)
+sid=$(cat "$HOME/agsbx/xrk/short_id" 2>/dev/null)
+fi
+if [ -z "$pvk" ] || [ -z "$pbk" ]; then
 key_pair=$("$HOME/agsbx/xray" x25519)
-private_key=$(echo "$key_pair" | grep "PrivateKey" | awk '{print $2}')
-public_key=$(echo "$key_pair" | grep "Password" | awk '{print $2}')
-short_id=$(date +%s%N | sha256sum | cut -c 1-8)
-echo "$private_key" > "$HOME/agsbx/xrk/private_key"
-echo "$public_key" > "$HOME/agsbx/xrk/public_key"
-echo "$short_id" > "$HOME/agsbx/xrk/short_id"
+pvk=$(echo "$key_pair" | awk -F'[：:]' 'tolower($1) ~ /private ?key/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2; exit}')
+pbk=$(echo "$key_pair" | awk -F'[：:]' 'tolower($1) ~ /(public ?key|password)/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2; exit}')
 fi
-private_key_x=$(cat "$HOME/agsbx/xrk/private_key")
-public_key_x=$(cat "$HOME/agsbx/xrk/public_key")
-short_id_x=$(cat "$HOME/agsbx/xrk/short_id")
+if [ -z "$sid" ]; then
+sid=$(date +%s%N | sha256sum | cut -c 1-8)
+fi
+fi
+if [ -z "$pvk" ] || [ -z "$pbk" ] || [ -z "$sid" ]; then
+echo "Reality密钥获取失败，请检查xray x25519的输出格式" && exit
+fi
+if ! iskey "$pvk" || ! iskey "$pbk"; then
+echo "Reality密钥格式不对：pvk/pbk 应为约43位base64字符串"
+echo "当前 pvk=$pvk"
+echo "当前 pbk=$pbk"
+echo "请删除 pvk/pbk/sid 环境变量让脚本自动生成，或改填正确的值" && exit
+fi
+echo "$pvk" > "$HOME/agsbx/xrk/private_key"
+echo "$pbk" > "$HOME/agsbx/xrk/public_key"
+echo "$sid" > "$HOME/agsbx/xrk/short_id"
+private_key_x=$pvk
+public_key_x=$pbk
+short_id_x=$sid
+echo "Reality密钥来源：$kbfrom"
+if [ "$kbfrom" = '本地生成(重启后会变)' ]; then
+echo "如需重启不变，请把下面三个值设为环境变量 pvk / pbk / sid："
+echo "  pvk=$pvk"
+echo "  pbk=$pbk"
+echo "  sid=$sid"
+fi
 fi
 echo "$reym" > "$HOME/agsbx/reym"
 echo "$name-" > "$HOME/agsbx/name"
