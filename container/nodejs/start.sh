@@ -2,10 +2,11 @@
 export LANG=en_US.UTF-8
 export uuid=${uuid}
 export vmpt=${vmpt}
-export vlpt=${vlpt}
+# Railway 开启 TCP Proxy 后会自动注入 RAILWAY_TCP_* 变量，未手动设置时自动读取
+export vlpt=${vlpt:-$RAILWAY_TCP_APPLICATION_PORT}
 export reym=${reym}
-export rlyhost=${rlyhost}
-export rlyport=${rlyport}
+export rlyhost=${rlyhost:-$RAILWAY_TCP_PROXY_DOMAIN}
+export rlyport=${rlyport:-$RAILWAY_TCP_PROXY_PORT}
 export pvk=${pvk}
 export pbk=${pbk}
 export sid=${sid}
@@ -36,6 +37,13 @@ x86_64) cpu=amd64;;
 *) echo "目前脚本不支持$(uname -m)架构" && exit
 esac
 mkdir -p "$HOME/agsbx"
+
+checkport(){
+case "$1" in
+''|*[!0-9]*) return 1;;
+esac
+[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
 
 iskey(){
 case "$1" in
@@ -302,6 +310,16 @@ ins(){
 if [ -n "$vmpt" ] && ! checkport "$vmpt"; then
 echo "Vmess-ws端口不是有效端口: $vmpt" && exit
 fi
+webport=${PORT:-3000}
+if [ -n "$vmpt" ] && [ "$vmpt" = "$webport" ]; then
+echo "Vmess-ws端口 $vmpt 与Node网页端口 PORT=$webport 冲突，请更换" && exit
+fi
+if [ -n "$vlpt" ] && [ "$vlpt" = "$webport" ]; then
+echo "Vless-reality端口 $vlpt 与Node网页端口 PORT=$webport 冲突，请更换" && exit
+fi
+if [ -n "$vmpt" ] && [ -n "$vlpt" ] && [ "$vmpt" = "$vlpt" ]; then
+echo "Vmess-ws端口与Vless-reality端口不能相同：$vmpt" && exit
+fi
 v4v6
 installxray
 addvmessws
@@ -379,12 +397,17 @@ cfip() { echo $((RANDOM % 13 + 1)); }
 
 # vmess-ws 直连节点
 if grep vmess-xr "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
+if [ -n "$RAILWAY_PROJECT_ID" ]; then
+echo "提示：Railway容器无公网入站IP，Vmess-ws直连节点不可用，已跳过；请启用 argo 使用Vmess-ws-argo节点"
+echo
+else
 echo "💣【 Vmess-ws 】节点信息如下："
 vmpt=$(cat "$HOME/agsbx/vmpt")
 vm_link="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"${sxname}vm-ws-$hostname\", \"add\": \"$server_ip\", \"port\": \"$vmpt\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"www.bing.com\", \"path\": \"/$uuid-vm\", \"tls\": \"\"}" | base64 -w0)"
 echo "$vm_link" >> "$HOME/agsbx/jh.txt"
 echo "$vm_link"
 echo
+fi
 fi
 
 # reality 节点
@@ -398,7 +421,7 @@ if [ -n "$rlyhost" ] && [ -n "$rlyport" ]; then
 echo "注：地址与端口取自Railway TCP Proxy，须与容器内监听端口 $vlpt 对应"
 vl_link="vless://$uuid@$rlyhost:$rlyport?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reym&fp=chrome&pbk=$public_key_x&sid=$short_id_x&type=tcp&headerType=none#${sxname}vl-reality-vision-$hostname"
 else
-echo "提示：未设置 rlyhost/rlyport，以下为占位符，请替换为Railway TCP Proxy分配的地址与端口"
+echo "提示：未设置 rlyhost/rlyport（也未检测到Railway TCP Proxy变量），以下为占位符，请在Railway开启TCP Proxy（内部端口填 $vlpt）后重新部署"
 echo "容器内监听端口：$vlpt"
 vl_link="vless://$uuid@RAILWAY_TCP_PROXY_HOST:RAILWAY_TCP_PROXY_PORT?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reym&fp=chrome&pbk=$public_key_x&sid=$short_id_x&type=tcp&headerType=none#${sxname}vl-reality-vision-$hostname"
 fi
