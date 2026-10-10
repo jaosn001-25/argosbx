@@ -2,6 +2,10 @@
 export LANG=en_US.UTF-8
 export uuid=${uuid}
 export vmpt=${vmpt}
+export vlpt=${vlpt}
+export reym=${reym}
+export reality_host=${reality_host}
+export reality_port=${reality_port}
 export argo=${argo}
 export agn=${agn}
 export agk=${agk}
@@ -19,7 +23,7 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo "甬哥Github项目 ：github.com/yonggekkk"
 echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
 echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
-echo "Argosbx一键无交互小钢炮脚本💣 (精简版：vmess-ws + argo)"
+echo "Argosbx一键无交互小钢炮脚本💣 (vmess-ws + argo + vless-tcp-reality-vision)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 hostname=$(uname -a | awk '{print $2}')
@@ -107,6 +111,79 @@ EOF
 fi
 }
 
+addreality(){
+[ -n "$vlpt" ] || return 0
+reym=${reym:-apple.com}
+case "$reym" in
+*[!A-Za-z0-9.-]*|'') echo "Reality域名格式无效" >&2; exit 1;;
+esac
+mkdir -p "$HOME/agsbx/xrk"
+chmod 700 "$HOME/agsbx/xrk"
+if [ ! -s "$HOME/agsbx/xrk/private_key" ]; then
+key_pair=$("$HOME/agsbx/xray" x25519) || exit 1
+private_key_x=$(printf '%s\n' "$key_pair" | awk -F': *' '/^(PrivateKey|Private key):/ {print $2}')
+else
+private_key_x=$(cat "$HOME/agsbx/xrk/private_key")
+fi
+# 从私钥推导公钥，兼容旧版 Public key 和新版 Password 输出。
+key_pair=$("$HOME/agsbx/xray" x25519 -i "$private_key_x") || exit 1
+public_key_x=$(printf '%s\n' "$key_pair" | awk -F': *' '/^(Password|PublicKey|Public key):/ {print $2}')
+if [ -z "$private_key_x" ] || [ -z "$public_key_x" ]; then
+echo "Reality密钥获取失败，请检查 xray x25519 输出格式" >&2
+exit 1
+fi
+(
+umask 077
+printf '%s\n' "$private_key_x" > "$HOME/agsbx/xrk/private_key"
+printf '%s\n' "$public_key_x" > "$HOME/agsbx/xrk/public_key"
+)
+chmod 600 "$HOME/agsbx/xrk/private_key"
+if [ ! -s "$HOME/agsbx/xrk/short_id" ]; then
+od -An -N4 -tx1 /dev/urandom | tr -d ' \n' > "$HOME/agsbx/xrk/short_id"
+fi
+short_id_x=$(cat "$HOME/agsbx/xrk/short_id")
+printf '%s\n' "$reym" > "$HOME/agsbx/reym"
+printf '%s\n' "$vlpt" > "$HOME/agsbx/vlpt"
+# vmess 入站没有尾逗号，追加第二个入站时补分隔符。
+[ -z "$vmpt" ] || printf ',\n' >> "$HOME/agsbx/xr.json"
+echo "Vless-tcp-reality-v端口：$vlpt"
+cat >> "$HOME/agsbx/xr.json" <<EOF
+        {
+            "tag":"reality-vision",
+            "listen": "::",
+            "port": $vlpt,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "${uuid}",
+                        "flow": "xtls-rprx-vision"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "reality",
+                "realitySettings": {
+                    "fingerprint": "chrome",
+                    "dest": "${reym}:443",
+                    "serverNames": [
+                      "${reym}"
+                    ],
+                    "privateKey": "$private_key_x",
+                    "shortIds": ["$short_id_x"]
+                }
+            },
+          "sniffing": {
+          "enabled": true,
+          "destOverride": ["http", "tls", "quic"],
+          "metadataOnly": false
+      }
+    }
+EOF
+}
+
 finalizexray(){
 sed -i '${s/,\s*$//}' "$HOME/agsbx/xr.json"
 cat >> "$HOME/agsbx/xr.json" <<EOF
@@ -138,11 +215,12 @@ cat >> "$HOME/agsbx/xr.json" <<EOF
   }
 }
 EOF
+"$HOME/agsbx/xray" run -test -c "$HOME/agsbx/xr.json" || exit 1
 nohup "$HOME/agsbx/xray" run -c "$HOME/agsbx/xr.json" >/dev/null 2>&1 &
 }
 
 installargo(){
-if [ -n "$argo" ]; then
+if [ -n "$argo" ] && [ -n "$vmpt" ]; then
 echo
 echo "=========启用Cloudflared-argo内核========="
 if [ ! -e "$HOME/agsbx/cloudflared" ]; then
@@ -184,7 +262,26 @@ fi
 fi
 }
 
+checkport(){
+case "$1" in ''|*[!0-9]*) return 1;; esac
+[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
 ins(){
+for port in "$vmpt" "$vlpt" "$reality_port"; do
+[ -z "$port" ] && continue
+if ! checkport "$port"; then
+echo "无效端口：$port" >&2; exit 1
+fi
+done
+for port in "$vmpt" "$vlpt"; do
+if [ -n "$port" ] && [ "$port" -eq "${PORT:-3000}" ]; then
+echo "协议端口与 Node 网页端口冲突：$port" >&2; exit 1
+fi
+done
+if [ -n "$vmpt" ] && [ -n "$vlpt" ] && [ "$vmpt" -eq "$vlpt" ]; then
+echo "Vmess 与 Reality 端口不能相同" >&2; exit 1
+fi
 if [ -n "$name" ]; then
 sxname=$name-
 echo "$sxname" > "$HOME/agsbx/name"
@@ -194,6 +291,7 @@ fi
 v4v6
 installxray
 addvmessws
+addreality
 finalizexray
 installargo
 }
@@ -264,6 +362,24 @@ echo "*********************************************************"
 echo "Argosbx脚本输出节点配置如下："
 echo
 cfip() { echo $((RANDOM % 13 + 1)); }
+
+# Reality TCP 直连节点（可覆盖公网地址/映射端口）
+if grep reality-vision "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
+echo "💣【 Vless-tcp-reality-vision 】节点信息如下："
+vlpt=$(cat "$HOME/agsbx/vlpt")
+reym=$(cat "$HOME/agsbx/reym")
+public_key_x=$(cat "$HOME/agsbx/xrk/public_key")
+short_id_x=$(cat "$HOME/agsbx/xrk/short_id")
+reality_address=${reality_host:-$server_ip}
+case "$reality_address" in
+\[*\]) ;;
+*:*) reality_address="[$reality_address]";;
+esac
+vl_link="vless://$uuid@${reality_address}:${reality_port:-$vlpt}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reym&fp=chrome&pbk=$public_key_x&sid=$short_id_x&type=tcp&headerType=none#${sxname}vl-reality-vision-$hostname"
+echo "$vl_link" >> "$HOME/agsbx/jh.txt"
+echo "$vl_link"
+echo
+fi
 
 # vmess-ws 直连节点
 if grep vmess-xr "$HOME/agsbx/xr.json" >/dev/null 2>&1; then
