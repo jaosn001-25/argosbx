@@ -4,6 +4,7 @@ export uuid=${uuid}
 export vmpt=${vmpt}
 export vlpt=${vlpt}
 export reym=${reym}
+# 可选：订阅中使用的公网地址和端口（NAT / TCP 转发）。
 export reality_host=${reality_host}
 export reality_port=${reality_port}
 export argo=${argo}
@@ -121,15 +122,17 @@ mkdir -p "$HOME/agsbx/xrk"
 chmod 700 "$HOME/agsbx/xrk"
 if [ ! -s "$HOME/agsbx/xrk/private_key" ]; then
 key_pair=$("$HOME/agsbx/xray" x25519) || exit 1
-private_key_x=$(printf '%s\n' "$key_pair" | awk -F': *' '/^(PrivateKey|Private key):/ {print $2}')
+private_key_x=$(printf '%s\n' "$key_pair" | awk -F: 'tolower($1) ~ /^[[:space:]]*private[[:space:]]*key[[:space:]]*$/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')
 else
 private_key_x=$(cat "$HOME/agsbx/xrk/private_key")
 fi
 # 从私钥推导公钥，兼容旧版 Public key 和新版 Password 输出。
 key_pair=$("$HOME/agsbx/xray" x25519 -i "$private_key_x") || exit 1
-public_key_x=$(printf '%s\n' "$key_pair" | awk -F': *' '/^(Password|PublicKey|Public key):/ {print $2}')
+public_key_x=$(printf '%s\n' "$key_pair" | awk -F: 'tolower($1) ~ /^[[:space:]]*(password|public[[:space:]]*key)([[:space:]]|[(]|$)/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')
 if [ -z "$private_key_x" ] || [ -z "$public_key_x" ]; then
-echo "Reality密钥获取失败，请检查 xray x25519 输出格式" >&2
+echo "Reality密钥获取失败；Xray版本与输出字段如下（不含密钥值）：" >&2
+"$HOME/agsbx/xray" version 2>/dev/null | head -n 1 >&2
+printf '%s\n' "$key_pair" | awk -F: 'NF > 1 {print $1 ": [redacted]"}' >&2
 exit 1
 fi
 (
