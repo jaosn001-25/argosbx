@@ -1,13 +1,14 @@
 #!/bin/sh
 export LANG=en_US.UTF-8
-export uuid=${UUID}
-export vwpt=${VMPT}
-export cfip=${CFIP}
-export argo=${ARGO}
-export agn=${AGN}
-export agk=${AGK}
-export ippz=${IPPZ}
-export name=${NAME}
+export uuid=${UUID:-${uuid}}
+export vmpt=${VMPT:-${vmpt}}
+export vwpt=${VMPT:-${VWPT:-${vwpt}}}
+export argo=${ARGO:-${argo}}
+export agn=${AGN:-${agn}}
+export agk=${AGK:-${agk}}
+export cfip=${CFIP:-${cfip}}
+export ippz=${IPPZ:-${ippz}}
+export name=${NAME:-${name}}
 v46url="https://icanhazip.com"
 
 showmode(){
