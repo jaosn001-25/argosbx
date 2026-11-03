@@ -1,4 +1,11 @@
 #!/bin/sh
+echo "========== 环境变量检查 =========="                                                                             
+echo "大写 UUID: ${UUID:-<未设置>} | 小写 uuid: ${uuid:-<未设置>}"                                                    
+echo "大写 VMPT: ${VMPT:-<未设置>} | 小写 vmpt: ${vmpt:-<未设置>}"                                                    
+echo "大写 ARGO: ${ARGO:-<未设置>} | 小写 argo: ${argo:-<未设置>}"                                                    
+echo "大写 AGN : ${AGN:-<未设置>}  | 小写 agn : ${agn:-<未设置>}"                                                     
+echo "大写 CFIP: ${CFIP:-<未设置>} | 小写 cfip: ${cfip:-<未设置>}"                                                    
+echo "=================================="       
 export LANG=en_US.UTF-8
 export uuid=${UUID:-${uuid}}
 export vmpt=${VMPT:-${vmpt}}
