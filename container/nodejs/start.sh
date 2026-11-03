@@ -1,12 +1,12 @@
 #!/bin/sh
 export LANG=en_US.UTF-8
-export uuid=${uuid}
-export vmpt=${vmpt}
-export argo=${argo}
-export agn=${agn}
-export agk=${agk}
-export ippz=${ippz}
-export name=${name}
+export uuid=${UUID}
+export vmpt=${VMPT}
+export argo=${ARGO}
+export agn=${AGN}
+export agk=${AGK}
+export ippz=${IPPZ}
+export name=${NAME}
 v46url="https://icanhazip.com"
 
 showmode(){
